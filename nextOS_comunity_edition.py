@@ -1,4 +1,5 @@
 import time
+import subprocess
 from programs.notebook import run_notebook
 from programs.timer import run_timer
 from programs.calculator import run_calculator
@@ -7,7 +8,7 @@ from programs.calculator import run_calculator
 
 def show_info():
     print("\n--- Информация о Next OS ---")
-    print("Версия: 1.1")
+    print("Версия: 1.2.0")
     print("Разработчик: official; https://t.me/Poilwarp / community; @Sixrainky (tg) ")
     print("Эта псевдо-ОС создана для демонстрационных целей.")
     print("---------------------------\n")
@@ -39,6 +40,23 @@ while True:
         print("Выключение...")
         break # Выход из цикла для завершения программы
     else:
-        print("Неверный ввод.")
+        # Новые команды: run shell <путь> и shell wiki
+        if choice.startswith("run shell"):
+            parts = choice.split(maxsplit=2)
+            if len(parts) == 3:
+                script_path = parts[2]
+                try:
+                    subprocess.run(["python", "programs/shell.py", script_path], check=False)
+                except Exception as e:
+                    print(f"Ошибка запуска shell-скрипта: {e}")
+            else:
+                print("Использование: run shell <путь_к_скрипту>")
+        elif choice.strip() == "shell wiki":
+            try:
+                subprocess.run(["python", "programs/shell.py", "wiki"], check=False)
+            except Exception as e:
+                print(f"Ошибка вывода справки: {e}")
+        else:
+            print("Неверный ввод.")
 
 print("Next ОС завершила работу.")
