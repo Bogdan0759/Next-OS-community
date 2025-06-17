@@ -1,44 +1,9 @@
 import time
+from programs.notebook import run_notebook
+from programs.timer import run_timer
+from programs.calculator import run_calculator
 
 # Основной цикл псевдо-ОС
-
-def run_notebook():
-    print("\n--- Блокнот ---")
-    print("Введите текст построчно. Для выхода введите пустую строку.")
-    lines = []
-    while True:
-        line = input("> ")
-        if not line:
-            break
-        lines.append(line)
-    print("\nСодержимое блокнота:")
-    for line in lines:
-        print(line)
-    print("-------------------\n")
-
-def run_timer():
-    print("\n--- Таймер ---")
-    try:
-        seconds = int(input("Введите количество секунд: "))
-        if seconds < 0:
-            print("Время не может быть отрицательным.")
-            return
-        print(f"Таймер запущен на {seconds} секунд...")
-        time.sleep(seconds)
-        print("Время вышло!")
-    except ValueError:
-        print("Неверный ввод. Пожалуйста, введите целое число секунд.")
-    print("-------------------\n")
-
-def run_calculator():
-    print("\n--- Калькулятор ---")
-    expression = input("Введите математическое выражение (например, 2+2*3): ")
-    try:
-        result = eval(expression)
-        print(f"Результат: {result}")
-    except Exception as e:
-        print(f"Ошибка при вычислении: {e}")
-    print("---------------------\n")
 
 def show_info():
     print("\n--- Информация о Next OS ---")
