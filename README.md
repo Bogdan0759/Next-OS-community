@@ -1,7 +1,3 @@
-# My Personal Website
+# telegrambotlib
 
-This is a simple personal website created with HTML, CSS, and JavaScript.
-
-## Getting Started
-
-To view the website, open the `index.html` file in your web browser.
+Библиотека для создания Telegram-ботов на Python.
