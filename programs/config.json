@@ -1,5 +1,12 @@
 {
   "notebook": true,
   "timer": true,
-  "calculator": true
+  "calculator": true,
+  "users": {
+    "admin": {
+      "password": "admin",
+      "name": "Администратор",
+      "role": "admin"
+    }
+  }
 }

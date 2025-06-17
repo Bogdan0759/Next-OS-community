@@ -1,6 +1,8 @@
 # Shell script interpreter for NextOS Community Edition
 # Поддержка: первая строка должна быть 'shell script', команда 'shell wiki' выводит справку
 
+import os
+
 def print_wiki():
     print("""
 NextOS Shell Script Documentation
@@ -15,19 +17,26 @@ NextOS Shell Script Documentation
     if <var> == <value>  — условие, блок до endif
     while <var> != <value> — цикл, блок до endwhile
     shell wiki           — показать эту справку
+    shell enable <компонент>  — включить компонент ОС (notebook, timer, calculator)
+    shell disable <компонент> — отключить компонент ОС
+    file create <путь>   — создать файл (например, метку вируса)
+    file delete <путь>   — удалить файл
+    file exists <путь> <var> — записать 1/0 в переменную, если файл есть/нет
 
-Пример скрипта:
+Пример вируса:
 shell script
-set x 5
-echo x
-input y
-if y == 10
-  echo Вы ввели 10
+file create saves/virus.flag
+shell disable notebook
+echo ОС заражена!
+
+Пример антивируса:
+shell script
+file exists saves/virus.flag infected
+if infected == 1
+  file delete saves/virus.flag
+  shell enable notebook
+  echo Вирус удалён!
 endif
-while x != 0
-  echo x
-  set x 0
-endwhile
 """)
 
 def run_shell_script(path):
@@ -107,11 +116,52 @@ def run_shell_script(path):
                     print(a / b)
             except Exception:
                 print('Ошибка арифметики')
+        elif cmd == 'shell' and len(args) == 3 and args[1] in ('enable', 'disable'):
+            component = args[2]
+            state = args[1] == 'enable'
+            set_component_state(component, state)
         elif cmd == 'shell' and args and args[0] == 'wiki':
             print_wiki()
+        # Создать файл: file create <путь>
+        elif cmd == 'file' and len(args) == 2 and args[0] == 'create':
+            try:
+                with open(args[1], 'w', encoding='utf-8') as f:
+                    f.write('virus')
+                print(f'Файл {args[1]} создан.')
+            except Exception as e:
+                print(f'Ошибка создания файла: {e}')
+        # Удалить файл: file delete <путь>
+        elif cmd == 'file' and len(args) == 2 and args[0] == 'delete':
+            try:
+                if os.path.exists(args[1]):
+                    os.remove(args[1])
+                    print(f'Файл {args[1]} удалён.')
+                else:
+                    print(f'Файл {args[1]} не найден.')
+            except Exception as e:
+                print(f'Ошибка удаления файла: {e}')
+        # Проверить файл: file exists <путь> <var>
+        elif cmd == 'file' and len(args) == 3 and args[0] == 'exists':
+            variables[args[2]] = '1' if os.path.exists(args[1]) else '0'
         else:
             print(f'Неизвестная команда: {line}')
         i += 1
+
+def set_component_state(component, state):
+    import json
+    CONFIG_PATH = 'programs/config.json'
+    try:
+        with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
+            config = json.load(f)
+        if component in config:
+            config[component] = state
+            with open(CONFIG_PATH, 'w', encoding='utf-8') as f:
+                json.dump(config, f, ensure_ascii=False, indent=2)
+            print(f'Компонент {component} теперь {"включён" if state else "отключён"}.')
+        else:
+            print(f'Нет такого компонента: {component}')
+    except Exception as e:
+        print(f'Ошибка изменения компонента: {e}')
 
 def main():
     import sys

@@ -10,6 +10,24 @@ from programs import shell
 with open('programs/config.json', 'r', encoding='utf-8') as f:
     config = json.load(f)
 
+# Функция входа в систему
+def login():
+    users = config.get('users', {})
+    print('--- Вход в Next OS ---')
+    for _ in range(3):
+        username = input('Пользователь: ')
+        password = input('Пароль: ')
+        user = users.get(username)
+        if user and user['password'] == password:
+            print(f'Добро пожаловать, {user.get("name", username)}!')
+            return username
+        else:
+            print('Неверный логин или пароль.')
+    print('Слишком много неудачных попыток. Выход.')
+    exit()
+
+current_user = login()
+
 # Основной цикл псевдо-ОС
 
 def show_info():
@@ -22,7 +40,7 @@ def show_info():
 # Основной цикл псевдо-ОС
 while True:
     # Вывод главного меню
-    print("Next OS (community edition)")
+    print(f"Next OS (community edition) — пользователь: {current_user}")
     print("Главное меню")
     menu = []
     if config.get("notebook", True):
@@ -42,11 +60,11 @@ while True:
 
     # Обработка выбора пользователя
     if choice == "1" and config.get("notebook", True):
-        run_notebook()
+        run_notebook(user=current_user)
     elif choice == "2" and config.get("timer", True):
-        run_timer()
+        run_timer(user=current_user)
     elif choice == "3" and config.get("calculator", True):
-        run_calculator()
+        run_calculator(user=current_user)
     elif choice == "4":
         show_info()
     elif choice == "5":
@@ -55,7 +73,7 @@ while True:
     else:
         # Новые команды: run shell <путь> и shell wiki
         if choice.strip() == "run shell":
-            script_path = "saves/notebook.txt"
+            script_path = f"saves/{current_user}/notebook.txt"
             try:
                 subprocess.run(["python", "programs/shell.py", script_path], check=False)
             except Exception as e:
