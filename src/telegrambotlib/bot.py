@@ -7,6 +7,7 @@ import threading
 import sqlite3
 from abc import ABC, abstractmethod
 from apscheduler.schedulers.background import BackgroundScheduler
+import functools
 
 # === Кастомные исключения ===
 class TelegramAPIError(Exception):
@@ -129,7 +130,7 @@ class Bot:
 
 # === Webhook Server ===
 class WebhookServer:
-    def __init__(self, bot: Bot, dispatcher: Dispatcher, host: str = '0.0.0.0', port: int = 8443, ssl_context=None):
+    def __init__(self, bot: Bot, dispatcher: 'Dispatcher', host: str = '0.0.0.0', port: int = 8443, ssl_context=None):
         self.bot = bot
         self.dispatcher = dispatcher
         self.host = host
@@ -285,29 +286,202 @@ class BotScheduler:
     def shutdown(self):
         self.scheduler.shutdown()
 
-# === Пример использования в комментариях ===
+# === Утилиты для фильтров и лимитов ===
+def is_group(message):
+    return message.get('chat', {}).get('type') in ['group', 'supergroup']
+
+def admin_only(admin_ids):
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(message, bot, *args, **kwargs):
+            if message['from']['id'] not in admin_ids:
+                bot.send_message(message['chat']['id'], "Только для админов!")
+                return
+            return func(message, bot, *args, **kwargs)
+        return wrapper
+    return decorator
+
+def rate_limit(seconds: int):
+    user_last_call = {}
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(message, bot, *args, **kwargs):
+            user_id = message['from']['id']
+            now = time.time()
+            last = user_last_call.get(user_id, 0)
+            if now - last < seconds:
+                return
+            user_last_call[user_id] = now
+            return func(message, bot, *args, **kwargs)
+        return wrapper
+    return decorator
+
+def parse_args(func):
+    @functools.wraps(func)
+    def wrapper(message, bot, *args, **kwargs):
+        parts = message.get('text', '').split(maxsplit=1)
+        if len(parts) > 1:
+            return func(message, bot, parts[1], *args, **kwargs)
+        else:
+            return func(message, bot, '', *args, **kwargs)
+    return wrapper
+
+def make_paginated_keyboard(items, page, page_size=5):
+    start = page * page_size
+    end = start + page_size
+    buttons = [[{"text": item, "callback_data": f"item_{i}"}] for i, item in enumerate(items[start:end], start)]
+    nav_buttons = []
+    if page > 0:
+        nav_buttons.append({"text": "⬅️ Назад", "callback_data": f"page_{page-1}"})
+    if end < len(items):
+        nav_buttons.append({"text": "➡️ Вперед", "callback_data": f"page_{page+1}"})
+    if nav_buttons:
+        buttons.append(nav_buttons)
+    return buttons
+
+# === Расширенный Dispatcher ===
+class AdvancedDispatcher(Dispatcher):
+    def __init__(self):
+        super().__init__()
+        self.any_message_handlers: List[Callable[[dict, Bot], None]] = []
+        self.callback_prefix_handlers: Dict[str, Callable[[dict, Bot], None]] = {}
+        self.stats_storage: Optional[Storage] = None
+
+    def command(self, cmd: str, *, filters=None):
+        def decorator(func):
+            @functools.wraps(func)
+            def wrapper(message, bot, *args, **kwargs):
+                if filters:
+                    for f in filters:
+                        if not f(message):
+                            return
+                return func(message, bot, *args, **kwargs)
+            self.handlers[f"/{cmd}"] = wrapper
+            return wrapper
+        return decorator
+
+    def callback(self, data: str, prefix=False):
+        def decorator(func):
+            if prefix:
+                self.callback_prefix_handlers[data] = func
+            else:
+                self.callback_handlers[data] = func
+            return func
+        return decorator
+
+    def on_any_message(self, func: Callable[[dict, Bot], None]):
+        self.any_message_handlers.append(func)
+        return func
+
+    def process_update(self, update: dict, bot: Bot):
+        if "message" in update:
+            message = update["message"]
+            for func in self.any_message_handlers:
+                func(message, bot)
+            text = message.get("text", "")
+            if text:
+                cmd = text.split()[0]
+                if cmd in self.handlers:
+                    self.handlers[cmd](message, bot)
+        elif "callback_query" in update:
+            data = update["callback_query"]["data"]
+            if data in self.callback_handlers:
+                self.callback_handlers[data](update["callback_query"], bot)
+                bot.answer_callback_query(update["callback_query"]["id"])
+            else:
+                for prefix, func in self.callback_prefix_handlers.items():
+                    if data.startswith(prefix):
+                        func(update["callback_query"], bot)
+                        bot.answer_callback_query(update["callback_query"]["id"])
+                        break
+        elif "edited_message" in update:
+            for func in self.edited_handlers:
+                func(update["edited_message"], bot)
+        elif "channel_post" in update:
+            for func in self.channel_post_handlers:
+                func(update["channel_post"], bot)
+        elif "inline_query" in update:
+            for func in self.inline_query_handlers:
+                func(update["inline_query"], bot)
+
+    def set_stats_storage(self, storage: Storage):
+        self.stats_storage = storage
+
+# === Inline редактирование сообщений ===
+def edit_message_text(bot, chat_id, message_id, text, keyboard=None):
+    data = {
+        "chat_id": chat_id,
+        "message_id": message_id,
+        "text": text,
+        "parse_mode": "HTML"
+    }
+    if keyboard:
+        data["reply_markup"] = keyboard
+    return bot._request("editMessageText", data=data)
+
+# === Пример использования новых возможностей ===
 """
-# Пример запуска webhook-сервера:
-bot = Bot(token)
-dp = Dispatcher()
-server = WebhookServer(bot, dp, host='0.0.0.0', port=8443, ssl_context=('cert.pem', 'key.pem'))
-server.set_webhook('https://yourdomain.com:8443/')
-server.run()
+# Команда с аргументами
+@dp.command("echo")
+@parse_args
+def echo_handler(message, bot, args):
+    if args:
+        bot.send_message(message['chat']['id'], args)
+    else:
+        bot.send_message(message['chat']['id'], "Нет аргументов!")
 
-# Пример работы с хранилищем:
-storage = SQLiteStorage()
-storage.set('user:123', 'some data')
-print(storage.get('user:123'))
+# Команда только для групп
+@dp.command("grouponly", filters=[is_group])
+def group_only_handler(message, bot):
+    bot.send_message(message['chat']['id'], "Ты в группе, круто!")
 
-# Пример inline query:
-@dp.on_inline_query
-def handle_inline(query, bot):
-    results = [InlineQueryResult.article('1', 'Title', 'Text')]
-    bot.answer_inline_query(query['id'], results)
+# Rate limit
+@dp.command("slow")
+@rate_limit(10)
+def slow_command(message, bot):
+    bot.send_message(message['chat']['id'], "Ты не спамь!")
 
-# Пример планировщика:
-scheduler = BotScheduler()
-def send_news():
-    bot.send_message(chat_id, 'Новости!')
-scheduler.add_job(send_news, 'interval', minutes=60)
+# Callback с префиксом
+@dp.callback("vote_", prefix=True)
+def vote_handler(callback_query, bot):
+    data = callback_query['data']
+    vote_id, choice = data.split('_')[1:]
+    bot.answer_callback_query(callback_query['id'], f"Голос {choice} учтен!")
+
+# Глобальный хендлер
+@dp.on_any_message
+def log_all(message, bot):
+    print("Сообщение от", message['from'].get('username'), ":", message.get('text', ''))
+
+# Пагинация
+keyboard = make_paginated_keyboard([f"Item {i}" for i in range(20)], page=0)
+
+# Команда только для админов
+@dp.command("admincmd")
+@admin_only([12345678, 87654321])
+def admin_command(message, bot):
+    bot.send_message(message['chat']['id'], "Ты админ!")
+
+# Статистика
+@dp.on_any_message
+def count_messages(message, bot):
+    count = int(dp.stats_storage.get('msg_count') or 0) + 1
+    dp.stats_storage.set('msg_count', str(count))
+
+@dp.command("stats")
+def stats(message, bot):
+    count = dp.stats_storage.get('msg_count') or "0"
+    bot.send_message(message['chat']['id'], f"Всего сообщений: {count}")
+
+# Inline редактирование
+edit_message_text(bot, chat_id, message_id, "Новое сообщение", keyboard)
+
+# /start с параметрами
+@dp.command("start")
+@parse_args
+def start_handler(message, bot, param):
+    if param:
+        bot.send_message(message['chat']['id'], f"Ты пришёл с параметром: {param}")
+    else:
+        bot.send_message(message['chat']['id'], "Привет! Это старт.")
 """
