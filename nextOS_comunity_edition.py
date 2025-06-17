@@ -14,7 +14,7 @@ with open('programs/config.json', 'r', encoding='utf-8') as f:
 
 def show_info():
     print("\n--- Информация о Next OS ---")
-    print("Версия: 1.3.8")
+    print("Версия: 1.3.9")
     print("Разработчик: official; https://t.me/Poilwarp / community; @Sixrainky (tg) ")
     print("Эта псевдо-ОС создана для демонстрационных целей.")
     print("---------------------------\n")

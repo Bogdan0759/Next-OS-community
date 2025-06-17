@@ -8,17 +8,26 @@ NextOS Shell Script Documentation
 
 - Первая строка скрипта: shell script
 - Поддерживаемые команды:
-    echo <text>      — вывести текст
-    add <a> <b>      — сложить два числа
-    sub <a> <b>      — вычесть b из a
-    mul <a> <b>      — умножить два числа
-    div <a> <b>      — разделить a на b
-    shell wiki       — показать эту справку
+    echo <text|var>      — вывести текст или значение переменной
+    set <var> <value>    — создать/задать переменную
+    input <var>          — запросить ввод пользователя и сохранить в переменную
+    add/sub/mul/div <a> <b> — арифметика (можно использовать переменные)
+    if <var> == <value>  — условие, блок до endif
+    while <var> != <value> — цикл, блок до endwhile
+    shell wiki           — показать эту справку
 
 Пример скрипта:
 shell script
-echo Hello, world!
-add 2 3
+set x 5
+echo x
+input y
+if y == 10
+  echo Вы ввели 10
+endif
+while x != 0
+  echo x
+  set x 0
+endwhile
 """)
 
 def run_shell_script(path):
