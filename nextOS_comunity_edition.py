@@ -46,11 +46,11 @@ while True:
 
     # Обработка выбора пользователя
     if choice == "1" and config.get("notebook", True):
-        run_notebook(user=current_user)
+        run_notebook()
     elif choice == "2" and config.get("timer", True):
-        run_timer(user=current_user)
+        run_timer()
     elif choice == "3" and config.get("calculator", True):
-        run_calculator(user=current_user)
+        run_calculator()
     elif choice == "4":
         show_info()
     elif choice == "5":
