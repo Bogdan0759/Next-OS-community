@@ -1,13 +1,15 @@
 import time
 import subprocess
 import json
+import os
 from programs.notebook import run_notebook
 from programs.timer import run_timer
 from programs.calculator import run_calculator
 from programs import shell
 
 # Загрузка конфигурации компонентов ОС
-with open('programs/config.json', 'r', encoding='utf-8') as f:
+config_path = os.path.join(os.path.dirname(__file__), 'programs', 'config.json')
+with open(config_path, 'r', encoding='utf-8') as f:
     config = json.load(f)
 
 # Функция входа в систему
