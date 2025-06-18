@@ -8,7 +8,7 @@ from programs.calculator import run_calculator
 from programs.game_center import run_game_center
 from programs import shell
 
-# Загрузка конфигурации компонентов ОС
+
 config_path = os.path.join(os.path.dirname(__file__), 'programs', 'config.json')
 with open(config_path, 'r', encoding='utf-8') as f:
     config = json.load(f)
@@ -19,13 +19,13 @@ current_user = "guest"
 
 def show_info():
     print("\n--- Информация о Next OS ---")
-    print("Версия: 1.4.1")
+    print("Версия: 2.0.1")
     print("Разработчик: official; https://t.me/Poilwarp / community; @Sixrainky (tg) ")
     print("Эта псевдо-ОС создана для демонстрационных целей.")
     print("---------------------------\n")
 
 while True:
-    # Вывод главного меню
+   
     print(f"Next OS (community edition) — пользователь: {current_user}")
     print("Главное меню")
     menu = []
@@ -38,13 +38,13 @@ while True:
     if config.get("calculator", True):
         print("3. Калькулятор")
         menu.append("3")
-    # Добавляем Game Center в меню под номером 4
+   
     if config.get("game_center", True):
         print("4. Игровой центр")
         menu.append("4")
 
-    print("5. Информация") # Информация теперь под номером 5
-    print("6. Выключение") # Выключение теперь под номером 6
+    print("5. Информация")
+    print("6. Выключение") 
 
     # Получение ввода пользователя
     choice = input("выбери действие: ")
@@ -56,11 +56,11 @@ while True:
         run_timer()
     elif choice == "3" and config.get("calculator", True):
         run_calculator()
-    elif choice == "4" and config.get("game_center", True): # Обработка выбора Game Center теперь по номеру 4
+    elif choice == "4" and config.get("game_center", True): 
         run_game_center()
-    elif choice == "5": # Обработка выбора Информации теперь по номеру 5
+    elif choice == "5": 
         show_info()
-    elif choice == "6": # Обработка выбора Выключения теперь по номеру 6
+    elif choice == "6": 
         print("Выключение...")
         break # Выход из цикла
     else:

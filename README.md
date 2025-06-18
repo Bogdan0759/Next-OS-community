@@ -26,7 +26,7 @@
 ## Разработчик
 
 *   official: https://t.me/Poilwarp
-*   community: @Sixrainky (tg), [text](https://t.me/thisisjolid)
+*   community: @Sixrainky (tg), [ТГК](https://t.me/thisisjolid)
 
 ## Лицензия
 
