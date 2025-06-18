@@ -5,6 +5,7 @@ import os
 from programs.notebook import run_notebook
 from programs.timer import run_timer
 from programs.calculator import run_calculator
+from programs.game_center import run_game_center
 from programs import shell
 
 # Загрузка конфигурации компонентов ОС
@@ -12,18 +13,17 @@ config_path = os.path.join(os.path.dirname(__file__), 'programs', 'config.json')
 with open(config_path, 'r', encoding='utf-8') as f:
     config = json.load(f)
 
-current_user = "guest" # Установить пользователя по умолчанию
+current_user = "guest" 
 
-# Основной цикл псевдо-ОС
+# Основной цикл
 
 def show_info():
     print("\n--- Информация о Next OS ---")
-    print("Версия: 1.3.9")
+    print("Версия: 1.4.1")
     print("Разработчик: official; https://t.me/Poilwarp / community; @Sixrainky (tg) ")
     print("Эта псевдо-ОС создана для демонстрационных целей.")
     print("---------------------------\n")
 
-# Основной цикл псевдо-ОС
 while True:
     # Вывод главного меню
     print(f"Next OS (community edition) — пользователь: {current_user}")
@@ -38,26 +38,33 @@ while True:
     if config.get("calculator", True):
         print("3. Калькулятор")
         menu.append("3")
-    print("4. Информация")
-    print("5. Выключение")
+    # Добавляем Game Center в меню под номером 4
+    if config.get("game_center", True):
+        print("4. Игровой центр")
+        menu.append("4")
+
+    print("5. Информация") # Информация теперь под номером 5
+    print("6. Выключение") # Выключение теперь под номером 6
 
     # Получение ввода пользователя
     choice = input("выбери действие: ")
 
-    # Обработка выбора пользователя
+    # Обработка выбора
     if choice == "1" and config.get("notebook", True):
         run_notebook()
     elif choice == "2" and config.get("timer", True):
         run_timer()
     elif choice == "3" and config.get("calculator", True):
         run_calculator()
-    elif choice == "4":
+    elif choice == "4" and config.get("game_center", True): # Обработка выбора Game Center теперь по номеру 4
+        run_game_center()
+    elif choice == "5": # Обработка выбора Информации теперь по номеру 5
         show_info()
-    elif choice == "5":
+    elif choice == "6": # Обработка выбора Выключения теперь по номеру 6
         print("Выключение...")
-        break # Выход из цикла для завершения программы
+        break # Выход из цикла
     else:
-        # Новые команды: run shell <путь> и shell wiki
+        
         if choice.strip() == "run shell":
             script_path = f"saves/{current_user}/notebook.txt"
             try:
@@ -69,7 +76,7 @@ while True:
                 subprocess.run(["python", "programs/shell.py", "wiki"], check=False)
             except Exception as e:
                 print(f"Ошибка вывода справки: {e}")
-        # Включение/отключение компонентов
+        
         elif choice.startswith("enable "):
             comp = choice.split(" ", 1)[1]
             if comp in config:
