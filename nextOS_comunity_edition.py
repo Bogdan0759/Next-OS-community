@@ -12,23 +12,7 @@ config_path = os.path.join(os.path.dirname(__file__), 'programs', 'config.json')
 with open(config_path, 'r', encoding='utf-8') as f:
     config = json.load(f)
 
-# Функция входа в систему
-def login():
-    users = config.get('users', {})
-    print('--- Вход в Next OS ---')
-    for _ in range(3):
-        username = input('Пользователь: ')
-        password = input('Пароль: ')
-        user = users.get(username)
-        if user and user['password'] == password:
-            print(f'Добро пожаловать, {user.get("name", username)}!')
-            return username
-        else:
-            print('Неверный логин или пароль.')
-    print('Слишком много неудачных попыток. Выход.')
-    exit()
-
-current_user = login()
+current_user = "guest" # Установить пользователя по умолчанию
 
 # Основной цикл псевдо-ОС
 
